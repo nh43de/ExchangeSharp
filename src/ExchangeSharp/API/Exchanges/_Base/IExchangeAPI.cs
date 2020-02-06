@@ -240,28 +240,36 @@ namespace ExchangeSharp
         /// <returns>Web socket, call Dispose to close</returns>
         Task<IWebSocket> GetTickersWebSocketAsync(Action<IReadOnlyCollection<KeyValuePair<string, ExchangeTicker>>> callback, params string[] symbols);
 
-        /// <summary>
-        /// Get information about trades via web socket
-        /// </summary>
-        /// <param name="callback">Callback (symbol and trade)</param>
-        /// <param name="marketSymbols">Market symbols</param>
-        /// <returns>Web socket, call Dispose to close</returns>
-        Task<IWebSocket> GetTradesWebSocketAsync(Func<KeyValuePair<string, ExchangeTrade>, Task> callback, params string[] marketSymbols);
+		bool SupportsTickersWebSocket { get; }
 
-        /// <summary>
-        /// Get the details of all changed orders via web socket
-        /// </summary>
-        /// <param name="callback">Callback</param>
-        /// <returns>Web socket, call Dispose to close</returns>
-        Task<IWebSocket> GetOrderDetailsWebSocketAsync(Action<ExchangeOrderResult> callback);
+		/// <summary>
+		/// Get information about trades via web socket
+		/// </summary>
+		/// <param name="callback">Callback (symbol and trade)</param>
+		/// <param name="marketSymbols">Market symbols</param>
+		/// <returns>Web socket, call Dispose to close</returns>
+		Task<IWebSocket> GetTradesWebSocketAsync(Func<KeyValuePair<string, ExchangeTrade>, Task> callback, params string[] marketSymbols);
 
-        /// <summary>
-        /// Get the details of all completed orders via web socket
-        /// </summary>
-        /// <param name="callback">Callback</param>
-        /// <returns>Web socket, call Dispose to close</returns>
-        Task<IWebSocket> GetCompletedOrderDetailsWebSocketAsync(Action<ExchangeOrderResult> callback);
+		bool SupportsTradesWebSocket { get; }
 
-        #endregion Web Socket
-    }
+		/// <summary>
+		/// Get the details of all changed orders via web socket
+		/// </summary>
+		/// <param name="callback">Callback</param>
+		/// <returns>Web socket, call Dispose to close</returns>
+		Task<IWebSocket> GetOrderDetailsWebSocketAsync(Action<ExchangeOrderResult> callback);
+
+		bool SupportsOrderDetailsWebSocket { get; }
+
+		/// <summary>
+		/// Get the details of all completed orders via web socket
+		/// </summary>
+		/// <param name="callback">Callback</param>
+		/// <returns>Web socket, call Dispose to close</returns>
+		Task<IWebSocket> GetCompletedOrderDetailsWebSocketAsync(Action<ExchangeOrderResult> callback);
+
+		bool SupportsCompletedOrderDetailsWebSocket { get; }
+
+		#endregion Web Socket
+	}
 }

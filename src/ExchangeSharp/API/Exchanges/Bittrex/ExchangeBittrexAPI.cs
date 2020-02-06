@@ -31,7 +31,10 @@ namespace ExchangeSharp
         /// <summary>Coin types that only require an address to make the deposit</summary>
         public HashSet<string> OneFieldDepositCoinTypes { get; }
 
-        public ExchangeBittrexAPI()
+        public override bool SupportsTradesWebSocket => true;
+        public override bool SupportsDeltaOrderBookWebSocket => true;
+
+		public ExchangeBittrexAPI()
         {
             // https://bittrex.github.io/api/v1-1#call-limits (Same counts for the V3 API)
             RateLimit = new RateGate(60, TimeSpan.FromSeconds(60));

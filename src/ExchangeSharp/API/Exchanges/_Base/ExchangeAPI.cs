@@ -895,7 +895,9 @@ namespace ExchangeSharp
             return OnGetTickersWebSocketAsync(callback, symbols);
         }
 
-        /// <summary>
+		public virtual bool SupportsTickersWebSocket => throw new NotImplementedException();
+
+		/// <summary>
         /// Get information about trades via web socket
         /// </summary>
         /// <param name="callback">Callback (symbol and trade)</param>
@@ -907,7 +909,9 @@ namespace ExchangeSharp
             return OnGetTradesWebSocketAsync(callback, marketSymbols);
         }
 
-        /// <summary>
+		public virtual bool SupportsTradesWebSocket => throw new NotImplementedException();
+
+		/// <summary>
         /// Get delta order book bids and asks via web socket. Only the deltas are returned for each callback. To manage a full order book, use ExchangeAPIExtensions.GetOrderBookWebSocket.
         /// </summary>
         /// <param name="callback">Callback of symbol, order book</param>
@@ -920,16 +924,20 @@ namespace ExchangeSharp
             return OnGetDeltaOrderBookWebSocketAsync(callback, maxCount, marketSymbols);
         }
 
-        /// <summary>
-        /// Get the details of all changed orders via web socket
-        /// </summary>
-        /// <param name="callback">Callback</param>
-        /// <returns>Web socket, call Dispose to close</returns>
-        public virtual Task<IWebSocket> GetOrderDetailsWebSocketAsync(Action<ExchangeOrderResult> callback)
+		public virtual bool SupportsDeltaOrderBookWebSocket => throw new NotImplementedException();
+
+		/// <summary>
+		/// Get the details of all changed orders via web socket
+		/// </summary>
+		/// <param name="callback">Callback</param>
+		/// <returns>Web socket, call Dispose to close</returns>
+		public virtual Task<IWebSocket> GetOrderDetailsWebSocketAsync(Action<ExchangeOrderResult> callback)
         {
             callback.ThrowIfNull(nameof(callback), "Callback must not be null");
             return OnGetOrderDetailsWebSocketAsync(callback);
         }
+
+        public virtual bool SupportsOrderDetailsWebSocket => throw new NotImplementedException();
 
         /// <summary>
         /// Get the details of all completed orders via web socket
@@ -941,6 +949,8 @@ namespace ExchangeSharp
             callback.ThrowIfNull(nameof(callback), "Callback must not be null");
             return OnGetCompletedOrderDetailsWebSocketAsync(callback);
         }
+
+        public virtual bool SupportsCompletedOrderDetailsWebSocket => throw new NotImplementedException();
 
         /// <summary>
         /// Get user detail over web socket

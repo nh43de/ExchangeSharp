@@ -12,9 +12,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
+using System.Reactive.Concurrency;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using DynamicData;
+using ExchangeSharp.Annotations;
 
 namespace ExchangeSharp
 {
@@ -32,11 +37,51 @@ namespace ExchangeSharp
 		/// </summary>
 		public static WebProxy? Proxy { get; set; }
 
+		public class HttpRequestLog 
+		{
+			public Guid Id { get; set; } = Guid.NewGuid();
+
+			public DateTime LogTime { get; set; } = DateTime.Now;
+			
+			public string BaseUrl { get; set; }
+			public string Url { get; set; }
+
+			public bool InProgress { get; set; }
+			public bool Success { get; set; }
+			public string StatusCode { get; set; }
+			public string Method { get; set; }
+			public string Payload { get; set; }
+			public string Message { get; set; }
+
+			public override string ToString()
+			{
+				return Id.ToString().Substring(0, 6) + ": " + (InProgress ? "Pending" : (Success ? "Completed" : "Fail")) + $" {Url} {Method} {StatusCode}";
+			}
+		}
+
+		private static readonly ISourceCache<HttpRequestLog, Guid> HttpLog =
+			new SourceCache<HttpRequestLog, Guid>(log => log.Id);
+
+		public static readonly IObservableCache<HttpRequestLog, Guid> LogStream;
+
 		/// <summary>
 		/// Static constructor
 		/// </summary>
 		static APIRequestMaker()
 		{
+			HttpLog
+				.ExpireAfter(log =>
+				{
+					if (log.InProgress)
+						return (TimeSpan?) null;
+					return log.Success == false
+						? TimeSpan.FromDays(1)
+						: TimeSpan.FromSeconds(15);
+				}, TimeSpan.FromSeconds(3), TaskPoolScheduler.Default)
+				.Subscribe();
+
+			LogStream = HttpLog.AsObservableCache();
+
 			var httpProxy = Environment.GetEnvironmentVariable("http_proxy");
 			httpProxy ??= Environment.GetEnvironmentVariable("HTTP_PROXY");
 
@@ -44,11 +89,11 @@ namespace ExchangeSharp
 			{
 				return;
 			}
-
+			
 			var uri = new Uri(httpProxy);
 			Proxy = new WebProxy(uri);
-
 		}
+
 		internal class InternalHttpWebRequest : IHttpWebRequest
         {
             internal readonly HttpWebRequest Request;
@@ -159,16 +204,16 @@ namespace ExchangeSharp
             this.api = api;
         }
 
-        /// <summary>
-        /// Make a request to a path on the API
-        /// </summary>
-        /// <param name="url">Path and query</param>
-        /// <param name="baseUrl">Override the base url, null for the default BaseUrl</param>
-        /// <param name="payload">Payload, can be null. For private API end points, the payload must contain a 'nonce' key set to GenerateNonce value.</param>
-        /// The encoding of payload is API dependant but is typically json.</param>
-        /// <param name="method">Request method or null for default. Example: 'GET' or 'POST'.</param>
-        /// <returns>Raw response</returns>
-        public async Task<string> MakeRequestAsync(string url, string? baseUrl = null, Dictionary<string, object>? payload = null, string? method = null)
+		/// <summary>
+		/// Make a request to a path on the API
+		/// </summary>
+		/// <param name="url">Path and query</param>
+		/// <param name="baseUrl">Override the base url, null for the default BaseUrl</param>
+		/// <param name="payload">Payload, can be null. For private API end points, the payload must contain a 'nonce' key set to GenerateNonce value.</param>
+		/// The encoding of payload is API dependant but is typically json.</param>
+		/// <param name="method">Request method or null for default. Example: 'GET' or 'POST'.</param>
+		/// <returns>Raw response</returns>
+		public async Task<string> MakeRequestAsync(string url, string? baseUrl = null, Dictionary<string, object>? payload = null, string? method = null)
         {
             await new SynchronizationContextRemover();
             await api.RateLimit.WaitToProceedAsync();
@@ -193,15 +238,36 @@ namespace ExchangeSharp
             HttpWebResponse? response = null;
             string responseString;
 
+            var logMessage = new HttpRequestLog
+            {
+				BaseUrl = baseUrl ?? "",
+				InProgress = true,
+				Url = url,
+				Method = method,
+				Payload = payload?.GetJsonForPayload() ?? ""
+            };
+			
             try
             {
                 try
                 {
                     RequestStateChanged?.Invoke(this, RequestMakerState.Begin, uri.AbsoluteUri);// when start make a request we send the uri, this helps developers to track the http requests.
+
+                    HttpLog.AddOrUpdate(logMessage);
+					
                     response = await request.Request.GetResponseAsync() as HttpWebResponse;
+
                     if (response == null)
                     {
-                        throw new APIException("Unknown response from server");
+	                    var err = "Unknown response from server";
+
+						logMessage.InProgress = false;
+	                    logMessage.Success = false;
+	                    logMessage.Message = err;
+
+	                    HttpLog.AddOrUpdate(logMessage);
+
+						throw new APIException(err);
                     }
                 }
                 catch (WebException we)
@@ -209,30 +275,60 @@ namespace ExchangeSharp
                     response = we.Response as HttpWebResponse;
                     if (response == null)
                     {
-                        throw new APIException(we.Message ?? "Unknown response from server");
+	                    var err = we.Message ?? "Unknown response from server";
+
+	                    logMessage.InProgress = false;
+	                    logMessage.Success = false;
+	                    logMessage.Message = err;
+
+	                    HttpLog.AddOrUpdate(logMessage);
+
+						throw new APIException(err);
                     }
                 }
+
                 using (Stream responseStream = response.GetResponseStream())
                 using (StreamReader responseStreamReader = new StreamReader(responseStream))
                     responseString = responseStreamReader.ReadToEnd();
 
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
-	                // 404 maybe return empty responseString
-	                if (string.IsNullOrWhiteSpace(responseString))
-	                {
-                        throw new APIException(string.Format("{0} - {1}", response.StatusCode.ConvertInvariant<int>(), response.StatusCode));
+	                logMessage.InProgress = false;
+	                logMessage.Success = false;
+	                logMessage.StatusCode = response.StatusCode.ToString();
+
+					// 404 maybe return empty responseString
+					if (string.IsNullOrWhiteSpace(responseString))
+					{
+						var err = $"{response.StatusCode.ConvertInvariant<int>()} - {response.StatusCode}";
+
+						logMessage.Message = err;
+						HttpLog.AddOrUpdate(logMessage);
+						throw new APIException(err);
 	                }
 
-	                throw new APIException(responseString);
+					logMessage.Message = responseString;
+					HttpLog.AddOrUpdate(logMessage);
+					throw new APIException(responseString);
                 }
 
-                api.ProcessResponse(new InternalHttpWebResponse(response));
+                logMessage.InProgress = false;
+                logMessage.Success = true;
+                logMessage.StatusCode = response.StatusCode.ToString();
+                //logMessage.Response = responseString; if ok don't log
+                HttpLog.AddOrUpdate(logMessage);
+
+				api.ProcessResponse(new InternalHttpWebResponse(response));
                 RequestStateChanged?.Invoke(this, RequestMakerState.Finished, responseString);
             }
             catch (Exception ex)
             {
-                RequestStateChanged?.Invoke(this, RequestMakerState.Error, ex);
+	            logMessage.InProgress = false;
+	            logMessage.Success = false;
+	            logMessage.StatusCode = response?.StatusCode.ToString() ?? "";
+	            HttpLog.AddOrUpdate(logMessage);
+
+				RequestStateChanged?.Invoke(this, RequestMakerState.Error, ex);
                 throw;
             }
             finally

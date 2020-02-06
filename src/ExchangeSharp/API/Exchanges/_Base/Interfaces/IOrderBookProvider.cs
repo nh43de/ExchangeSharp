@@ -1,4 +1,4 @@
-﻿/*
+/*
 MIT LICENSE
 
 Copyright 2017 Digital Ruby, LLC - http://www.digitalruby.com
@@ -46,10 +46,12 @@ namespace ExchangeSharp
         /// <returns>Web socket, call Dispose to close</returns>
         Task<IWebSocket> GetDeltaOrderBookWebSocketAsync(Action<ExchangeOrderBook> callback, int maxCount = 20, params string[] marketSymbols);
 
-        /// <summary>
-        /// What type of web socket order book is provided
-        /// </summary>
-        WebSocketOrderBookType WebSocketOrderBookType { get; }
+        bool SupportsDeltaOrderBookWebSocket { get; }
+
+		/// <summary>
+		/// What type of web socket order book is provided
+		/// </summary>
+		WebSocketOrderBookType WebSocketOrderBookType { get; }
     }
 
     /// <summary>
