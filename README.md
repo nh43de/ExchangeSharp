@@ -33,6 +33,7 @@ The following cryptocurrency exchanges are supported:
 | Bittrex          | x         | x           | T R       |
 | BL3P             | x         | x           |   R B     | Trades stream does not send trade's ids.
 | Bleutrade        | x         | x           |           |
+| BTSE             | x         | x           |           |
 | Coinbase         | x         | x           | T R       |
 | Digifinex        | x         | x           |   R B     |
 | Gemini           | x         | x           |   R       |
@@ -42,12 +43,12 @@ The following cryptocurrency exchanges are supported:
 | KuCoin           | x         | x           | T R       |
 | LBank            | x         | x           |           |
 | Livecoin         | x         | x           |           |
+| NDAX             | x         | x           | T R       |
 | OKCoin           | x         | x           |   R B     |
 | OKEx             | x         | x           |   R B     |
 | Poloniex         | x         | x           | T R B     |
 | YoBit            | x         | x           |           |
 | ZB.com           | wip       |             |   R       |
-| NDAX             | x         | x           | T R       |
 
 The following cryptocurrency services are supported:
 - Cryptowatch (partial)
@@ -85,10 +86,10 @@ See [`WebSocket4NetClientWebSocket.cs`][websocket4net] for implementation detail
 ### Nuget
 
 #### dotnet CLI
-[`dotnet add package DigitalRuby.ExchangeSharp --version 0.6.4`][nuget]
+[`dotnet add package DigitalRuby.ExchangeSharp --version 0.7.1`][nuget]
 
 #### Package Manager on VS
-[`PM> Install-Package DigitalRuby.ExchangeSharp -Version 0.6.4`][nuget]
+[`PM> Install-Package DigitalRuby.ExchangeSharp -Version 0.7.1`][nuget]
 
 ### Examples
 

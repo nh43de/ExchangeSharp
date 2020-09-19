@@ -10,33 +10,36 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-namespace ExchangeSharp.BinanceGroup
+namespace ExchangeSharp
 {
-    using System.Collections.Generic;
-
-    using Newtonsoft.Json;
-
-    internal class MarketDepthDiffUpdate
+    /// <summary>
+    /// Contains information about a position on exchange
+    /// </summary>
+    public class ExchangePosition
     {
-        [JsonProperty("e")]
-        public string EventType { get; set; }
-
-        [JsonProperty("E")]
-        public long EventTime { get; set; }
-
-        [JsonProperty("s")]
+        /// <summary>
+        /// Market Symbol
+        /// </summary>
         public string MarketSymbol { get; set; }
 
-        [JsonProperty("U")]
-        public long FirstUpdate { get; set; }
+        /// <summary>
+        /// Amount
+        /// </summary>
+        public decimal Amount { get; set; }
 
-        [JsonProperty("u")]
-        public long FinalUpdate { get; set; }
+        /// <summary>
+        /// Average Price
+        /// </summary>
+        public decimal AveragePrice { get; set; }
 
-        [JsonProperty("b")]
-        public List<List<object>> Bids { get; set; }
+        /// <summary>
+        /// Liquidation Price
+        /// </summary>
+        public decimal LiquidationPrice { get; set; }
 
-        [JsonProperty("a")]
-        public List<List<object>> Asks { get; set; }
+        /// <summary>
+        /// Leverage
+        /// </summary>
+        public decimal Leverage { get; set; }
     }
 }
