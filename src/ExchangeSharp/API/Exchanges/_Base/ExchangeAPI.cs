@@ -590,7 +590,9 @@ namespace ExchangeSharp
                     return market;
                 }
 
-                // try again with a fresh request
+                // don't try again with a fresh request //TODO: make this configurable
+                return null;
+
                 Cache.Remove(nameof(GetMarketSymbolsMetadataAsync));
                 Cache.Remove(nameof(ExchangeAPIExtensions.GetExchangeMarketDictionaryFromCacheAsync));
                 lookup = await this.GetExchangeMarketDictionaryFromCacheAsync();

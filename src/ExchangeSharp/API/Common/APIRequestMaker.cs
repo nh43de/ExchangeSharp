@@ -76,7 +76,7 @@ namespace ExchangeSharp
 						return (TimeSpan?) null;
 					return log.Success == false
 						? TimeSpan.FromDays(1)
-						: TimeSpan.FromSeconds(15);
+						: TimeSpan.FromSeconds(60);
 				}, TimeSpan.FromSeconds(3), TaskPoolScheduler.Default)
 				.Subscribe();
 
@@ -240,7 +240,7 @@ namespace ExchangeSharp
 
             var logMessage = new HttpRequestLog
             {
-				BaseUrl = baseUrl ?? "",
+				BaseUrl = (baseUrl ?? api.BaseUrl) ?? "",
 				InProgress = true,
 				Url = url,
 				Method = method,
